@@ -3,30 +3,45 @@ import 'package:http/http.dart';
 import 'package:http/io_client.dart' as http;
 
 class APIClient {
-  http.IOClient getAPIClient() {
+  http.IOClient getProxyAPIClient() {
     final httpClient = HttpClient();
 
-    // httpClient.findProxy = (Uri uri) {
-    //   return "PROXY 35.185.196.38:3128";
-    // };
+    httpClient.findProxy = (Uri uri) {
+      return "PROXY 35.185.196.38:3128";
+    };
 
-    // httpClient.badCertificateCallback =
-    //     (X509Certificate cert, String host, int port) => true;
+    httpClient.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
 
     return http.IOClient(httpClient);
   }
 
-  Future<Response> getRequest(String url) async {
-    final apiClient = getAPIClient();
+  http.IOClient getAPIClient() {
+    final httpClient = HttpClient();
 
+    return http.IOClient(httpClient);
+  }
+
+  Future<Response> getRequest(
+      {required http.IOClient ioClient,
+      required String url,
+      Map<String, String>? headers}) async {
     try {
-      return await apiClient.get(Uri.parse(url));
-    } catch (e, s) {
+      return await ioClient.get(Uri.parse(url), headers: headers);
+    } catch (e) {
       print(e);
-      print(s);
-      return Response("error", 1);
+      if (e.runtimeType.toString() == "_ClientSocketException") {
+        final exception = e as SocketException;
+        if (exception.osError?.errorCode == 1225) {
+          return getRequest(ioClient: getProxyAPIClient(), url: url);
+        } else {
+          return Response("Unknown Error Occurrred", 520);
+        }
+      } else {
+        return Response("Unknown Error Occurrred", 520);
+      }
     } finally {
-      apiClient.close();
+      ioClient.close();
     }
   }
 }

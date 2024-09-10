@@ -1,6 +1,8 @@
 import 'package:flixhq_extension/flixhq_extension.dart';
+import 'package:flixhq_extension/src/api_client.dart';
+import 'package:flixhq_extension/src/enums.dart';
 
 void main() {
-  FlixHq()
-      .getMediaDetails("https://flixhq.to/movie/watch-the-bigfoot-trap-98917");
+  // FlixHq().getLandingPage(APIClient().getAPIClient());
+  FlixHq().fetchServers("973427", MediaType.tv);
 }
